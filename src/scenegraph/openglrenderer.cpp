@@ -126,7 +126,7 @@ RENGINE_GLSL_HEADER
 "\
 uniform lowp sampler2D t;                                                       \n\
 uniform highp vec4 dims;                                                        \n\
-uniform highp vec2 step;                                                        \n\
+uniform highp vec2 dir;                                                         \n\
 uniform highp float sigma;                                                      \n\
 uniform int radius;                                                             \n\
 varying highp vec2 vT;                                                          \n\
@@ -134,7 +134,7 @@ highp float gauss(float x) { return exp(-(x*x)/sigma); }                        
 void main() {                                                                   \n\
     highp float r = float(radius);                                              \n\
     highp float weights = 0.5 * gauss(r);                                       \n\
-    highp vec4 result = weights * texture2D(t, vT - float(radius) * step);      \n\
+    highp vec4 result = weights * texture2D(t, vT - float(radius) * dir);       \n\
     for (int i=-radius+1; i<=radius; i+=2) {                                    \n\
         highp float p1 = float(i);                                              \n\
         highp float w1 = gauss(p1);                                             \n\
@@ -142,7 +142,7 @@ void main() {                                                                   
         highp float w2 = gauss(p2);                                             \n\
         highp float w = w1 + w2;                                                \n\
         highp float p = (p1 * w1 + p2 * w2) / w;                                \n\
-        result += w * texture2D(t, vT + p * step);                              \n\
+        result += w * texture2D(t, vT + p * dir);                               \n\
         weights += w;                                                           \n\
     }                                                                           \n\
     gl_FragColor = result / weights;                                            \n\
@@ -155,7 +155,7 @@ RENGINE_GLSL_HEADER
 uniform lowp sampler2D t;                                                       \n\
 uniform highp vec4 color;                                                       \n\
 uniform highp vec4 dims;                                                        \n\
-uniform highp vec2 step;                                                        \n\
+uniform highp vec2 dir;                                                         \n\
 uniform highp float sigma;                                                      \n\
 uniform int radius;                                                             \n\
 varying highp vec2 vT;                                                          \n\
@@ -163,7 +163,7 @@ highp float gauss(float x) { return exp(-(x*x)/sigma); }                        
 void main() {                                                                   \n\
     highp float r = float(radius);                                              \n\
     highp float weights = 0.5 * gauss(r);                                       \n\
-    highp float result = weights * texture2D(t, vT - float(radius) * step).a;   \n\
+    highp float result = weights * texture2D(t, vT - float(radius) * dir).a;    \n\
     for (int i=-radius+1; i<=radius; i+=2) {                                    \n\
         highp float p1 = float(i);                                              \n\
         highp float w1 = gauss(p1);                                             \n\
@@ -171,7 +171,7 @@ void main() {                                                                   
         highp float w2 = gauss(p2);                                             \n\
         highp float w = w1 + w2;                                                \n\
         highp float p = (p1 * w1 + p2 * w2) / w;                                \n\
-        result += w * texture2D(t, vT + p * step).a;                            \n\
+        result += w * texture2D(t, vT + p * dir).a;                             \n\
         weights += w;                                                           \n\
     }                                                                           \n\
     gl_FragColor = color * (result / weights);                                  \n\
@@ -273,7 +273,7 @@ void OpenGLRenderer::initialize()
     prog_blur.dims = prog_blur.resolve("dims");
     prog_blur.radius = prog_blur.resolve("radius");
     prog_blur.sigma = prog_blur.resolve("sigma");
-    prog_blur.step = prog_blur.resolve("step");
+    prog_blur.dir = prog_blur.resolve("dir");
 
     // Shadow shader
     prog_shadow.initialize(vsh_es_layer_blur, fsh_es_layer_shadow, attrsVT);
@@ -281,7 +281,7 @@ void OpenGLRenderer::initialize()
     prog_shadow.dims = prog_shadow.resolve("dims");
     prog_shadow.radius = prog_shadow.resolve("radius");
     prog_shadow.sigma = prog_shadow.resolve("sigma");
-    prog_shadow.step = prog_shadow.resolve("step");
+    prog_shadow.dir = prog_shadow.resolve("dir");
     prog_shadow.color = prog_shadow.resolve("color");
 
 #ifdef RENGINE_LOG_INFO
@@ -362,7 +362,7 @@ void OpenGLRenderer::drawBlurQuad(unsigned offset, GLuint texId, int radius, con
     glUniform4f(prog_blur.dims, renderSize.x, renderSize.y, textureSize.x, textureSize.y);
     float sigma = 0.3 * radius + 0.8;
     glUniform1f(prog_blur.sigma, sigma * sigma * 2.0);
-    glUniform2f(prog_blur.step, step.x, step.y);
+    glUniform2f(prog_blur.dir, step.x, step.y);
 
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void *) (offset * sizeof(vec2)));
     glBindTexture(GL_TEXTURE_2D, texId);
@@ -378,7 +378,7 @@ void OpenGLRenderer::drawShadowQuad(unsigned offset, GLuint texId, int radius, c
     glUniform4f(prog_shadow.dims, renderSize.x, renderSize.y, textureSize.x, textureSize.y);
     float sigma = 0.3 * radius + 0.8;
     glUniform1f(prog_shadow.sigma, sigma * sigma * 2.0);
-    glUniform2f(prog_shadow.step, step.x, step.y);
+    glUniform2f(prog_shadow.dir, step.x, step.y);
     glUniform4f(prog_shadow.color, color.x, color.y, color.z, color.w);
 
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void *) (offset * sizeof(vec2)));

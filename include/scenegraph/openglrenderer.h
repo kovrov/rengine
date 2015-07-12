@@ -131,7 +131,7 @@ public:
         int dims;
         int radius;
         int sigma;
-        int step;
+        int dir;
     } prog_blur;
     struct ShadowProgram : public BlurProgram {
         int color;
